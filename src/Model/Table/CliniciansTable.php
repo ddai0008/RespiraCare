@@ -44,7 +44,7 @@ class CliniciansTable extends Table
         parent::initialize($config);
 
         $this->setTable('clinicians');
-        $this->setDisplayField('id');
+        $this->setDisplayField('user_name');
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
@@ -73,6 +73,10 @@ class CliniciansTable extends Table
             ->integer('user_id')
             ->notEmptyString('user_id')
             ->add('user_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+
+        $validator
+            ->scalar('description')
+            ->allowEmptyString('description');
 
         return $validator;
     }

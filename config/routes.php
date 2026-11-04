@@ -57,12 +57,72 @@ return function (RouteBuilder $routes): void {
          */
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'home']);
         $builder->connect('/about', ['controller' => 'Pages', 'action' => 'about']);
+        $builder->connect('/help', ['controller' => 'Pages', 'action' => 'help']);
         $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'contact']);
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.
          */
         $builder->connect('/pages/*', 'Pages::display');
+
+        /*
+         * Disable Edit for Contact Messages
+         */
+        $builder->redirect(
+            '/contact-messages/edit/*',
+            ['controller' => 'ContactMessages', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/contact-messages/add',
+            ['controller' => 'ContactMessages', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/clinicians/edit/*',
+            ['controller' => 'Clinicians', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/clinicians/add',
+            ['controller' => 'Clinicians', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/clinicians/view/*',
+            ['controller' => 'Clinicians', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/patients/edit/*',
+            ['controller' => 'Patients', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/patients/add',
+            ['controller' => 'Patients', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/reminders/edit/*',
+            ['controller' => 'Reminders', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->redirect(
+            '/ai-insights/*',
+            ['controller' => 'Pages', 'action' => 'index'],
+            ['status' => 301],
+        );
+
+        $builder->connect('/go-back', ['controller' => 'App', 'action' => 'goBack']);
 
         /*
          * Connect catchall routes for all controllers.

@@ -3,17 +3,17 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
+use App\Model\Validation\TimeWindowValidation;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use DateTime;
 
 /**
  * Bookings Model
  *
  * @property \App\Model\Table\PatientsTable&\Cake\ORM\Association\BelongsTo $Patients
  * @property \App\Model\Table\CliniciansTable&\Cake\ORM\Association\BelongsTo $Clinicians
- *
  * @method \App\Model\Entity\Booking newEmptyEntity()
  * @method \App\Model\Entity\Booking newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Booking> newEntities(array $data, array $options = [])
@@ -27,7 +27,6 @@ use Cake\Validation\Validator;
  * @method iterable<\App\Model\Entity\Booking>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Booking> saveManyOrFail(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\Booking>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Booking>|false deleteMany(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\Booking>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Booking> deleteManyOrFail(iterable $entities, array $options = [])
- *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class BookingsTable extends Table
@@ -66,6 +65,8 @@ class BookingsTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        $validator->setProvider('timeWindow', TimeWindowValidation::class);
+
         $validator
             ->integer('patient_id')
             ->notEmptyString('patient_id');
@@ -81,13 +82,23 @@ class BookingsTable extends Table
         $validator
             ->dateTime('scheduled_date')
             ->requirePresence('scheduled_date', 'create')
-            ->notEmptyDateTime('scheduled_date');
+            ->notEmptyDateTime('scheduled_date')
+            ->add('scheduled_date', 'mustInFuture', [
+                'rule' => 'mustInFuture',
+                'provider' => 'timeWindow',
+                'message' => 'Scheduled date must be in the future.',
+            ])
+            ->add('scheduled_date', 'withinNextYears', [
+                'rule' => ['withinNextYears', 1],
+                'provider' => 'timeWindow',
+                'message' => 'Scheduled date must be within the next 1 year.',
+            ]);
 
         $validator
             ->scalar('status')
             ->maxLength('status', 50)
-            ->requirePresence('status', 'create')
-            ->notEmptyString('status');
+            ->notEmptyString('status')
+            ->inList('status', ['pending', 'confirmed', 'declined']);
 
         return $validator;
     }
@@ -104,6 +115,72 @@ class BookingsTable extends Table
         $rules->add($rules->existsIn(['patient_id'], 'Patients'), ['errorField' => 'patient_id']);
         $rules->add($rules->existsIn(['clinician_id'], 'Clinicians'), ['errorField' => 'clinician_id']);
 
+        $rules->add(function ($entity, $options) {
+            // If no clinician_id or scheduled date then return
+            if (!$entity->clinician_id || !$entity->scheduled_date) {
+                return true;
+            }
+
+            // Calculate start and end
+            $newStart = clone $entity->scheduled_date;
+            $duration = $entity->duration;
+            $newEnd = (clone $newStart)->modify("+{$duration} minutes");
+
+            // look up existing bookings on that specific day
+            $startOfDay = (clone $newStart)->setTime(0, 0, 0);
+            $endOfDay = (clone $newStart)->setTime(23, 59, 59);
+
+            $query = $this->find()
+                ->where([
+                    'clinician_id' => $entity->clinician_id,
+                    'status !=' => 'declined',
+                    'scheduled_date >=' => $startOfDay,
+                    'scheduled_date <=' => $endOfDay,
+                ]);
+
+            // Dont check itself
+            if (!$entity->isNew()) {
+                $query->where(['id !=' => $entity->id]);
+            }
+
+            $existingBookings = $query->all();
+
+            // Check if Overlap
+            foreach ($existingBookings as $booking) {
+                $existingStart = clone $booking->scheduled_date;
+                $existingDuration = (int)($booking->duration ?? 30);
+                $existingEnd = (clone $existingStart)->modify("+{$existingDuration} minutes");
+
+                // Overlap then return false
+                if ($newStart < $existingEnd && $newEnd > $existingStart) {
+                    return false;
+                }
+            }
+
+            return true;
+        }, 'preventDoubleBooking', [
+            'errorField' => 'scheduled_date',
+            'message' => 'The selected clinician already has an appointment during this time period.',
+        ]);
+
         return $rules;
+    }
+
+    /**
+     * Auto-decline pending bookings that are past their scheduled date
+     *
+     * @return int The number of records updated
+     */
+    public function updateExpiredPendingBookings(): int
+    {
+        $today = new DateTime();
+
+        return $this->updateAll(
+            ['status' => 'declined'],
+            [
+                'status' => 'pending',
+                'scheduled_date <' => $today->format('Y-m-d'),
+            ],
+        );
     }
 }

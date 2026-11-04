@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Validation\TimeWindowValidation;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -61,6 +62,8 @@ class PatientMeasurementsTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        $validator->setProvider('timeWindow', TimeWindowValidation::class);
+
         $validator
             ->integer('patient_id')
             ->notEmptyString('patient_id');
@@ -68,34 +71,51 @@ class PatientMeasurementsTable extends Table
         $validator
             ->dateTime('measured_at')
             ->requirePresence('measured_at', 'create')
-            ->notEmptyDateTime('measured_at');
+            ->notEmptyDateTime('measured_at')
+            ->add('measured_at', 'notInFuture', [
+                'rule' => 'notInFuture',
+                'provider' => 'timeWindow',
+                'message' => 'Measured time cannot be in the future.',
+            ])
+            ->add('measured_at', 'notTooOld', [
+                'rule' => ['withinLastYears', 5],
+                'provider' => 'timeWindow',
+                'message' => 'Measured time must be within the last 5 years.',
+            ]);
 
         $validator
             ->integer('spo2')
+            ->range('spo2', [50, 100])
             ->allowEmptyString('spo2');
 
         $validator
             ->integer('heart_rate')
+            ->range('heart_rate', [0, 200])
             ->allowEmptyString('heart_rate');
 
         $validator
             ->numeric('temperature')
+            ->range('temperature', [20, 50])
             ->allowEmptyString('temperature');
 
         $validator
             ->integer('respiratory_rate')
+            ->range('respiratory_rate', [0, 100])
             ->allowEmptyString('respiratory_rate');
 
         $validator
             ->integer('peak_flow')
+            ->range('peak_flow', [0, 1000])
             ->allowEmptyString('peak_flow');
 
         $validator
             ->integer('blood_pressure_systolic')
+            ->range('blood_pressure_systolic', [0, 300])
             ->allowEmptyString('blood_pressure_systolic');
 
         $validator
             ->integer('blood_pressure_diastolic')
+            ->range('blood_pressure_diastolic', [0, 200])
             ->allowEmptyString('blood_pressure_diastolic');
 
         $validator

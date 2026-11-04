@@ -119,3 +119,149 @@ body.dark {
         transform: rotate(360deg);
     }
 }
+
+.message {
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.message:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+.message.hidden {
+    display: none !important;
+}
+
+.message.error {
+    background-color: #fdf2f2;
+    color: #e74c3c;
+    border-left: 5px solid #e74c3c;
+}
+
+.message.warning {
+    background-color: #fff8e6;
+    color: #f39c12;
+    border-left: 5px solid #f39c12;
+}
+
+.message.info {
+    background-color: #eef6fd;
+    color: #3498db;
+    border-left: 5px solid #3498db;
+}
+
+.message.success {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border-left: 5px solid #16a34a;
+}
+
+/* Standard CakePHP error message styling with Tailwind colors */
+.error-message {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem; /* mt-2 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    color: #e02424; /* text-red-600 */
+}
+
+/* Dark mode support */
+.dark .error-message {
+    color: #f98080; /* text-red-400 */
+}
+
+/* Optional: Highlight the input border when there is an error */
+.form-error input,
+.form-error select,
+.form-error textarea {
+    border-color: #f8b4b4 !important; /* border-red-300 */
+    background-color: #fdf2f2 !important; /* bg-red-50 */
+}
+
+.dark .form-error input {
+    border-color: #9b1c1c !important;
+    background-color: #1a1a1a !important;
+}
+
+
+a.asc {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+a.desc {
+    color: var(--nav-color);
+    font-weight: 600;
+}
+
+ body .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-title {
+     font-size: 12px !important;
+     color: #111827 !important;
+     background-color: #f3f4f6 !important;
+     margin-bottom: 0 !important;
+     display: block !important;
+ }
+
+body .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text {
+    font-size: 12px !important;
+    color: #4b5563 !important;
+}
+
+body .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text-y-label {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+body .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text-y-value {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+}
+
+body .apexcharts-canvas .apexcharts-tooltip {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    border-radius: 0.5rem !important;
+}
+
+body .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-series-group {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+}
+
+body.dark .apexcharts-canvas .apexcharts-tooltip {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+}
+body.dark .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-title {
+    background-color: #374151 !important;
+    border-bottom-color: #4b5563 !important;
+    color: #f9fafb !important;
+}
+body.dark .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text,
+body.dark .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text-y-label {
+    color: #9ca3af !important;
+}
+body.dark .apexcharts-canvas .apexcharts-tooltip .apexcharts-tooltip-text-y-value {
+    color: #f9fafb !important;
+}
+
+body .apexcharts-canvas .apexcharts-legend-text {
+    font-size: 13px !important;
+    color: #4b5563 !important;
+    font-family: 'Inter', sans-serif !important;
+}

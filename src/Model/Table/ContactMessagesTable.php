@@ -31,6 +31,11 @@ use Cake\Validation\Validator;
  */
 class ContactMessagesTable extends Table
 {
+
+    // Enum for Status and Category
+    public const STATUS_OPTIONS = ['new', 'pending', 'replied', 'closed'];
+    public const CATEGORY_OPTIONS = ['General Inquiry', 'Technical Support', 'Billing', 'Feedback'];
+
     /**
      * Initialize method
      *
@@ -68,13 +73,21 @@ class ContactMessagesTable extends Table
             ->scalar('first_name')
             ->maxLength('first_name', 50)
             ->requirePresence('first_name', 'create')
-            ->notEmptyString('first_name');
+            ->notEmptyString('first_name')
+            ->add('first_name', 'validChars', [
+                'rule' => ['custom', "/^[a-zA-Z']+$/"],
+                'message' => __('First name can only contain letters and apostrophes.'),
+            ]);;
 
         $validator
             ->scalar('last_name')
             ->maxLength('last_name', 50)
             ->requirePresence('last_name', 'create')
-            ->notEmptyString('last_name');
+            ->notEmptyString('last_name')
+            ->add('last_name', 'validChars', [
+                'rule' => ['custom', "/^[a-zA-Z']+$/"],
+                'message' => __('Last name can only contain letters and apostrophes.'),
+            ]);
 
         $validator
             ->email('email')
@@ -84,18 +97,28 @@ class ContactMessagesTable extends Table
         $validator
             ->scalar('category')
             ->maxLength('category', 100)
-            ->allowEmptyString('category')
-            ->notEmptyString('category');
+            ->notEmptyString('category', 'Please select a category.')
+            ->add('category', 'validValue', [
+                'rule' => ['inList', self::CATEGORY_OPTIONS],
+                'message' => 'Please select a valid category from the list.',
+            ]);
 
         $validator
             ->scalar('status')
             ->maxLength('status', 50)
-            ->allowEmptyString('status');
+            ->add('status', 'validValue', [
+                'rule' => ['inList', self::STATUS_OPTIONS],
+                'message' => 'Invalid status value.',
+            ]);
 
         $validator
             ->scalar('message')
             ->requirePresence('message', 'create')
             ->notEmptyString('message');
+
+        $validator
+            ->scalar('notes')
+            ->allowEmptyString('notes');
 
         return $validator;
     }

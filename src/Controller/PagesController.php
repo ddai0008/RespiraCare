@@ -91,55 +91,7 @@ class PagesController extends AppController
      */
     public function home(): void
     {
-        $specialists = [
-            [
-                // https://www.pexels.com/zh-cn/photo/5998474/
-                'name' => 'Dr. Sarah Jenkins',
-                'desc' => 'Specializing in chronic lung disease and proactive remote patient monitoring.',
-                'image_url' => 'sarah_jenkins.jpg',
-                'delay' => '100',
-            ],
-            [
-                // https://www.pexels.com/zh-cn/photo/6234600/
-                'name' => 'Dr. Marcus Johnson',
-                'desc' => 'Dedicated to improving patient outcomes through continuous virtual care.',
-                'image_url' => 'marcus_johnson.jpg',
-                'delay' => '200',
-            ],
-            [
-                // https://www.pexels.com/zh-cn/photo/5215024/
-                'name' => 'Dr. Emily Rostova',
-                'desc' => 'Focused on patient education, symptom relief, and personalised treatment plans.',
-                'image_url' => 'emily_rostova.jpg',
-                'delay' => '300',
-            ],
-        ];
 
-        $copdSteps = [
-            [
-                'number' => '1',
-                'title' => 'Log Daily Vitals:',
-                'description' =>
-                    'Easily record your oxygen saturation (SpO2), blood pressure,
-                    and respiratory rate from the comfort of home.',
-            ],
-            [
-                'number' => '2',
-                'title' => 'Track Symptoms:',
-                'description' =>
-                    'Confidentially update your physician on coughing,
-                    wheezing, or shortness of breath via our secure portal.',
-            ],
-            [
-                'number' => '3',
-                'title' => 'Receive Expert Care:',
-                'description' =>
-                    'Get personalised feedback, proactive
-                    treatment adjustments, and continuous monitoring.',
-            ],
-        ];
-
-        $this->set(compact('specialists', 'copdSteps'));
     }
 
     /**
@@ -148,6 +100,15 @@ class PagesController extends AppController
      * @return void
      */
     public function about(): void
+    {
+    }
+
+    /**
+     * This function display the Help FAQ Page
+     *
+     * @return void
+     */
+    public function help(): void
     {
     }
 

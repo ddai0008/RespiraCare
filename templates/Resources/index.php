@@ -1,63 +1,77 @@
 <?php
+
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Resource> $resources
+ * @var \App\Model\Entity\User $identity
  */
+
+$this->setLayout($identity->role ?? 'default');
+$this->assign('title', 'Manage Resources');
+
+$has_privilege = $identity->role === 'admin' || $identity->role === 'clinician';
 ?>
-<div class="resources index content">
-    <?= $this->Html->link(__('New Resource'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Resources') ?></h3>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('id') ?></th>
-                    <th><?= $this->Paginator->sort('title') ?></th>
-                    <th><?= $this->Paginator->sort('published_date') ?></th>
-                    <th><?= $this->Paginator->sort('type') ?></th>
-                    <th><?= $this->Paginator->sort('url_link') ?></th>
-                    <th><?= $this->Paginator->sort('status') ?></th>
-                    <th><?= $this->Paginator->sort('created') ?></th>
-                    <th><?= $this->Paginator->sort('modified') ?></th>
-                    <th class="actions"><?= __('Actions') ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($resources as $resource): ?>
-                <tr>
-                    <td><?= $this->Number->format($resource->id) ?></td>
-                    <td><?= h($resource->title) ?></td>
-                    <td><?= h($resource->published_date) ?></td>
-                    <td><?= h($resource->type) ?></td>
-                    <td><?= h($resource->url_link) ?></td>
-                    <td><?= h($resource->status) ?></td>
-                    <td><?= h($resource->created) ?></td>
-                    <td><?= h($resource->modified) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $resource->id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $resource->id]) ?>
-                        <?= $this->Form->postLink(
-                            __('Delete'),
-                            ['action' => 'delete', $resource->id],
-                            [
-                                'method' => 'delete',
-                                'confirm' => __('Are you sure you want to delete # {0}?', $resource->id),
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+
+<div class="px-4 pt-6">
+
+    <?= $this->element('table/page_header', [
+        'title' => $has_privilege ? 'Manage Resources' : 'Resources',
+        'description' => $identity->role === 'admin' ? 'View, add, and manage educational resources.' : 'View available educational resources.',
+        'actionLabel' => __('New Resource'),
+        'actionUrl' => $has_privilege ? ['action' => 'add'] : null,
+    ]) ?>
+
+    <div class="flex flex-row gap-3 mb-1 items-center">
+        <!-- Filter by Type -->
+        <div class="w-48">
+            <?= $this->element('table/filter_dropdown', [
+                'paramName' => 'type',
+                'options' => [
+                    '' => 'All Types',
+                    'Article' => 'Articles',
+                    'Video' => 'Videos',
+                    'PDF' => 'PDFs',
+                    'External Link' => 'Links',
+                    'Guide' => 'Guides'
+                ]
+            ]) ?>
+        </div>
+
+        <?php if ($has_privilege) : ?>
+            <div class="w-48">
+                <?= $this->element('table/filter_dropdown', [
+                    'paramName' => 'status',
+                    'options' => [
+                        '' => 'All Status',
+                        'active' => 'Active',
+                        'draft' => 'Draft',
+                        'archived' => 'Archived',
+                    ]
+                ]) ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="w-48">
+            <?= $this->element('table/date_filter', ['class' => "p-2.5 bg-white"]); ?>
+        </div>
     </div>
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
-        </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
+
+    <!-- Sorting Controls -->
+    <div class="flex flex-col md:flex-row justify-between space-y-3 items-center py-4" id="resources-filter-panel">
+        <?= $this->element('table/search', ['class' => 'bg-white']) ?>
+
+        <div class="flex justify-end items-center space-x-3 text-sm">
+            <span class="text-gray-500 dark:text-gray-400 font-medium">Sort by:</span>
+            <?= $this->Paginator->sort('title', 'Title', ['class' => 'font-semibold transition-colors']) ?>
+            <span class="text-gray-300">|</span>
+            <?= $this->Paginator->sort('published_date', 'Date', ['class' => 'font-semibold transition-colors']) ?>
+            <span class="text-gray-300">|</span>
+            <?= $this->Paginator->sort('type', 'Type', ['class' => 'font-semibold transition-colors']) ?>
+        </div>
     </div>
+
+    <div id="grid-container">
+        <?= $this->element('table/entity_tables/resources_grid') ?>
+    </div>
+
 </div>

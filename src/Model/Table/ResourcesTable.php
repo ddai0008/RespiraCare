@@ -68,7 +68,12 @@ class ResourcesTable extends Table
             ->scalar('type')
             ->maxLength('type', 50)
             ->requirePresence('type', 'create')
-            ->notEmptyString('type');
+            ->notEmptyString('type')
+            ->inList('type', ['Article', 'Video', 'PDF', 'External Link', 'Guide'], 'Please select a valid type.');
+
+        $validator
+            ->scalar('content')
+            ->allowEmptyString('content');
 
         $validator
             ->scalar('url_link')
@@ -79,7 +84,8 @@ class ResourcesTable extends Table
             ->scalar('status')
             ->maxLength('status', 50)
             ->requirePresence('status', 'create')
-            ->notEmptyString('status');
+            ->notEmptyString('status')
+            ->inList('status', ['active', 'draft', 'archived'], 'Please select a valid status.');
 
         return $validator;
     }

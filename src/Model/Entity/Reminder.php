@@ -12,9 +12,9 @@ use Cake\ORM\Entity;
  * @property int $receiver_id
  * @property int|null $sender_id
  * @property string $message
+ * @property bool $is_read
  * @property \Cake\I18n\DateTime|null $created
  * @property \Cake\I18n\DateTime|null $modified
- *
  * @property \App\Model\Entity\User $receiver
  * @property \App\Model\Entity\User $sender
  */
@@ -33,6 +33,7 @@ class Reminder extends Entity
         'receiver_id' => true,
         'sender_id' => true,
         'message' => true,
+        'is_read' => true,
         'created' => true,
         'modified' => true,
         'receiver' => true,

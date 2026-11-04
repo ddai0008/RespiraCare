@@ -16,7 +16,6 @@ use Cake\ORM\Entity;
  * @property \App\Model\Entity\User $user
  * @property \App\Model\Entity\Booking[] $bookings
  * @property \App\Model\Entity\Patient[] $patients
- * @property \App\Model\Entity\Reminder[] $reminders
  */
 class Clinician extends Entity
 {
@@ -31,11 +30,19 @@ class Clinician extends Entity
      */
     protected array $_accessible = [
         'user_id' => true,
+        'description' => true,
         'created' => true,
         'modified' => true,
         'user' => true,
         'bookings' => true,
         'patients' => true,
-        'reminders' => true,
     ];
+
+    protected function _getUserName()
+    {
+        if (isset($this->user)) {
+            return $this->user->full_name;
+        }
+        return '';
+    }
 }

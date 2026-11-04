@@ -7,6 +7,7 @@ use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use App\Model\Validation\TimeWindowValidation;
 
 /**
  * SymptomLogs Model
@@ -67,18 +68,36 @@ class SymptomLogsTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        $validator->setProvider('timeWindow', TimeWindowValidation::class);
+
         $validator
             ->integer('patient_id')
             ->notEmptyString('patient_id');
 
         $validator
             ->scalar('description')
-            ->allowEmptyString('description');
+            ->requirePresence('description', 'create')
+            ->notEmptyString('description');
+            
+
+        $validator
+            ->integer('severity')
+            ->notEmptyString('severity');
 
         $validator
             ->dateTime('logged_at')
             ->requirePresence('logged_at', 'create')
-            ->notEmptyDateTime('logged_at');
+            ->notEmptyDateTime('logged_at')
+            ->add('logged_at', 'notInFuture', [
+                'rule' => ['notInFuture'],
+                'provider' => 'timeWindow',
+                'message' => 'The logged time cannot be in the future.'
+            ])
+            ->add('logged_at', 'notTooOld', [
+                'rule' => ['withinLastYears', 5],
+                'provider' => 'timeWindow',
+                'message' => 'The logged time must be within the last 5 years.'
+            ]);
 
         $validator
             ->scalar('notes')

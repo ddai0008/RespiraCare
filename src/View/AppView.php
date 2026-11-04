@@ -38,7 +38,32 @@ class AppView extends View
      */
     public function initialize(): void
     {
+        // Load the content block helper globally
+        $this->loadHelper('ContentBlocks.ContentBlock');
     }
 
+    /**
+     * Get the back button URL
+     * Simply returns the current referer or dashboard as fallback
+     *
+     * @return string|array Back URL
+     */
+    public function getDashboardUrl()
+    {
+        // Fallback to role-based dashboard
+        $identity = $this->getRequest()->getAttribute('identity');
+        $role = $identity?->role;
 
+        $dashboardRoutes = [
+            'admin' => ['controller' => 'Admins', 'action' => 'dashboard'],
+            'clinician' => ['controller' => 'Clinicians', 'action' => 'dashboard'],
+            'patient' => ['controller' => 'Patients', 'action' => 'dashboard'],
+        ];
+
+        if ($role === null) {
+            return '/';
+        }
+
+        return $dashboardRoutes[$role] ?? '/';
+    }
 }

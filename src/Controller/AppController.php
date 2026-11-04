@@ -14,10 +14,13 @@ declare(strict_types=1);
  * @since     0.2.9
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace App\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Event\EventInterface;
+use Cake\Http\Exception\NotFoundException;
+use Cake\Http\Response;
 
 /**
  * Application Controller
@@ -54,11 +57,162 @@ class AppController extends Controller
         $this->loadComponent('Authentication.Authentication');
     }
 
+    /**
+     * beforeFilter callback.
+     *
+     * @param \Cake\Event\EventInterface $event An Event instance
+     * @return \Cake\Http\Response|null|void
+     */
     public function beforeFilter(EventInterface $event)
     {
         parent::beforeFilter($event);
 
+        // // 判断插件
+        // $plugin = $this->request->getParam('plugin');
+        // $controller = $this->request->getParam('controller');
+        // debug("Plugin: $plugin, Controller: $controller");
+
+        // if ($plugin === 'ContentBlocks' && $controller === 'ContentBlocks') {
+        //     $this->checkRole(['admin']); // 仅管理员允许访问
+        // }
+
         $identity = $this->Authentication->getIdentity();
-        $this->set(compact('identity'));
+        $navbarReminders = null;
+
+        if ($identity) {
+            $navbarReminders = $this->fetchTable('Reminders')->find()
+                ->contain(['Senders'])
+                ->where(['Reminders.receiver_id' => $identity->get('id')])
+                ->orderBy(['Reminders.is_read' => 'ASC', 'Reminders.created' => 'DESC'])
+                ->limit(5)
+                ->all();
+        }
+
+        $this->set(compact('identity', 'navbarReminders'));
+    }
+
+    /**
+     * beforeRender callback.
+     *
+     * @param \Cake\Event\EventInterface $event An Event instance
+     * @return \Cake\Http\Response|null|void
+     */
+    public function beforeRender(EventInterface $event)
+    {
+        parent::beforeRender($event);
+
+        if (
+            $this->request->is('get') &&
+            !$this->request->is('ajax') &&
+            $this->request->getParam('action') !== 'goBack'
+        ) {
+            $statusCode = $this->response->getStatusCode();
+
+            $isRedirect = $statusCode >= 300 && $statusCode < 400;
+            $isError = $statusCode >= 400;
+
+            if (!$isRedirect && !$isError) {
+                $session = $this->request->getSession();
+                $history = $session->read('User.History', []);
+
+                $currentUrl = $this->request->getRequestTarget();
+
+                if (end($history) !== $currentUrl) {
+                    $history[] = $currentUrl;
+
+                    if (count($history) > 10) {
+                        array_shift($history);
+                    }
+
+                    $session->write('User.History', $history);
+                }
+            }
+        }
+    }
+
+    /**
+     * Generic utility method to retrieve the Patient ID of the currently logged-in user.
+     *
+     * @return int|null The Patient ID, or null if not found
+     */
+    protected function getPatientId(): ?int
+    {
+        // 1. Get the User ID of the currently logged-in account
+        $identity = $this->Authentication->getIdentity();
+        if (!$identity) {
+            return null;
+        }
+
+        $userId = $identity->get('id');
+
+        // 2. Find the associated Patient
+        // Use getTableLocator to ensure loading the Patients table in any Controller
+        $patient = $this->getTableLocator()->get('Patients')
+            ->find()
+            ->where(['user_id' => $userId])
+            ->select(['id']) // Only select ID to improve efficiency
+            ->first();
+
+        return $patient ? (int)$patient->id : null;
+    }
+
+    protected function getClinicianId(): ?int
+    {
+        $identity = $this->Authentication->getIdentity();
+        if (!$identity) {
+            return null;
+        }
+        $userId = $identity->get('id');
+
+        $clinician = $this->getTableLocator()->get('Clinicians')
+            ->find()
+            ->where(['user_id' => $userId])
+            ->select(['id'])
+            ->first();
+
+        return $clinician ? (int)$clinician->id : null;
+    }
+
+    protected function checkRole(array $requiredRole)
+    {
+        $identity = $this->Authentication->getIdentity();
+
+        if (!$identity || !in_array($identity->get('role'), $requiredRole)) {
+            throw new NotFoundException('Page not found');
+        }
+    }
+
+    public function goBack(): Response
+    {
+        $session = $this->request->getSession();
+        $history = $session->read('User.History', []);
+
+        // Remove current page
+        array_pop($history);
+
+        // Deduplicate trailing entries
+        while (count($history) >= 2 && end($history) === $history[count($history) - 2]) {
+            array_pop($history);
+        }
+
+        // Pop the target stack
+        $target = array_pop($history);
+
+        // Save trimmed history
+        $session->write('User.History', $history);
+
+        if (!$target) {
+            $identity = $this->request->getAttribute('identity');
+            $role = $identity?->role;
+            $dashboardRoutes = [
+                'admin'     => ['controller' => 'Admins',     'action' => 'dashboard'],
+                'clinician' => ['controller' => 'Clinicians', 'action' => 'dashboard'],
+                'patient'   => ['controller' => 'Patients',   'action' => 'dashboard'],
+            ];
+
+            return $this->redirect($dashboardRoutes[$role] ?? '/');
+        }
+
+        return $this->redirect($target);
     }
 }

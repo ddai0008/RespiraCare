@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Core\Configure;
+use Cake\Http\Client;
+use Cake\Http\Response;
+use DateTime;
 
 /**
  * ContactMessages Controller
@@ -12,7 +15,6 @@ use Cake\Core\Configure;
  */
 class ContactMessagesController extends AppController
 {
-
     /**
      * Initialize controller
      *
@@ -25,7 +27,6 @@ class ContactMessagesController extends AppController
         $this->Authentication->allowUnauthenticated(['contact']);
     }
 
-
     /**
      * Index method
      *
@@ -33,11 +34,57 @@ class ContactMessagesController extends AppController
      */
     public function index()
     {
+        $this->checkRole(['admin']);
+
         $query = $this->ContactMessages->find()
             ->contain(['Patients']);
-        $contactMessages = $this->paginate($query);
 
+        // 1. Get the search term from the URL
+        $search = $this->request->getQuery('search');
+
+        // 2. If a search term exists, apply the WHERE conditions
+        if (!empty($search)) {
+            $query->where([
+                'OR' => [
+                    'first_name LIKE' => '%' . $search . '%',
+                    'last_name LIKE' => '%' . $search . '%',
+                    'email LIKE' => '%' . $search . '%',
+                ],
+            ]);
+        }
+
+        $status = $this->request->getQuery('status');
+        $category = $this->request->getQuery('category');
+
+        if (!empty($status)) {
+            $query->where(['ContactMessages.status' => $status]);
+        }
+
+        if (!empty($category)) {
+            $query->where(['ContactMessages.category' => $category]);
+        }
+
+        $this->paginate = [
+            'limit' => 10,
+            'order' => ['created' => 'DESC'],
+        ];
+
+        $preset = $this->request->getQuery('date_preset');
+
+        if ($preset === 'today') {
+            $query->where(['ContactMessages.created >=' => new DateTime('today')]);
+        } elseif (in_array($preset, ['7', '30', '90'])) {
+            $query->where(['ContactMessages.created >=' => new DateTime("-{$preset} days")]);
+        }
+
+        $contactMessages = $this->paginate($query);
         $this->set(compact('contactMessages'));
+
+        if ($this->request->is('ajax')) {
+            $this->viewBuilder()->disableAutoLayout();
+
+            return $this->render('/element/table/entity_tables/contact_messages_table');
+        }
     }
 
     /**
@@ -47,54 +94,11 @@ class ContactMessagesController extends AppController
      * @return \Cake\Http\Response|null|void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view(?string $id = null)
     {
+        $this->checkRole(['admin']);
         $contactMessage = $this->ContactMessages->get($id, contain: ['Patients']);
         $this->set(compact('contactMessage'));
-    }
-
-    /**
-     * Add method
-     *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $contactMessage = $this->ContactMessages->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $contactMessage = $this->ContactMessages->patchEntity($contactMessage, $this->request->getData());
-            if ($this->ContactMessages->save($contactMessage)) {
-                $this->Flash->success(__('The contact message has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The contact message could not be saved. Please, try again.'));
-        }
-        $patients = $this->ContactMessages->Patients->find('list', limit: 200)->all();
-        $this->set(compact('contactMessage', 'patients'));
-    }
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Contact Message id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit($id = null)
-    {
-        $contactMessage = $this->ContactMessages->get($id, contain: []);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $contactMessage = $this->ContactMessages->patchEntity($contactMessage, $this->request->getData());
-            if ($this->ContactMessages->save($contactMessage)) {
-                $this->Flash->success(__('The contact message has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The contact message could not be saved. Please, try again.'));
-        }
-        $patients = $this->ContactMessages->Patients->find('list', limit: 200)->all();
-        $this->set(compact('contactMessage', 'patients'));
     }
 
     /**
@@ -104,8 +108,10 @@ class ContactMessagesController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete(?string $id = null)
     {
+        $this->checkRole(['admin']);
+
         $this->request->allowMethod(['post', 'delete']);
         $contactMessage = $this->ContactMessages->get($id);
         if ($this->ContactMessages->delete($contactMessage)) {
@@ -114,7 +120,7 @@ class ContactMessagesController extends AppController
             $this->Flash->error(__('The contact message could not be deleted. Please, try again.'));
         }
 
-        return $this->redirect(['controller' => 'Admins', 'action' => 'dashboard']);
+        return $this->redirect(['controller' => 'ContactMessages', 'action' => 'index']);
     }
 
     public function contact()
@@ -122,15 +128,14 @@ class ContactMessagesController extends AppController
         $contactMessage = $this->ContactMessages->newEmptyEntity();
 
         if ($this->request->is('post')) {
-
             // --- 1. 获取并校验 Turnstile Token ---
             $token = $this->request->getData('cf-turnstile-response');
 
-            $http = new \Cake\Http\Client();
+            $http = new Client();
             $response = $http->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => Configure::read('Turnstile.secretKey'), // 改用 Configure::read('Turnstile.secretKey')
                 'response' => $token,
-                'remoteip' => $this->request->clientIp()
+                'remoteip' => $this->request->clientIp(),
             ]);
 
             $outcome = $response->getJson();
@@ -141,7 +146,20 @@ class ContactMessagesController extends AppController
             }
             // --- 3. 如果验证码校验成功 ---
             else {
-                $contactMessage = $this->ContactMessages->patchEntity($contactMessage, $this->request->getData());
+                // Search for Patient Associated with the email
+                $data = $this->request->getData();
+                $patient = $this->ContactMessages->Patients->find()
+                    ->innerJoinWith('Users')
+                    ->where(['Users.email' => $data['email']])
+                    ->first();
+
+                $contactMessage = $this->ContactMessages->patchEntity($contactMessage, $data);
+
+                // If patient exist, assign the patient to the submission
+                if ($patient) {
+                    $contactMessage->patient_id = $patient->id;
+                }
+
                 if ($this->ContactMessages->save($contactMessage)) {
                     $this->Flash->success(__('The contact message has been saved.'));
 
@@ -155,12 +173,31 @@ class ContactMessagesController extends AppController
         $this->set(compact('contactMessage', 'patients'));
     }
 
-    public function changeStatus($id = null)
+    /**
+     * @param $id
+     * @return \Cake\Http\Response|null
+     */
+    public function changeStatus($id = null): ?Response
     {
+        // Fetch the entity
+        $this->checkRole(['admin']);
         $contactMessage = $this->ContactMessages->get($id);
-        $contactMessage->status = $contactMessage->status === 'open' ? 'close' : 'open';
-        $this->ContactMessages->save($contactMessage);
-        $this->Flash->success(__('The status of the contact message has been changed.'));
+
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $contactMessage = $this->ContactMessages->patchEntity($contactMessage, $this->request->getData(), [
+                'fields' => ['status', 'notes'],
+            ]);
+
+            // Save the entity
+            if ($this->ContactMessages->save($contactMessage)) {
+                $this->Flash->success(__('Changes saved successfully.'));
+
+                return $this->redirect(['action' => 'view', $id]);
+            }
+
+            $this->Flash->error(__('Unable to update the message. Please, try again.'));
+        }
+
         return $this->redirect(['action' => 'view', $id]);
     }
 }

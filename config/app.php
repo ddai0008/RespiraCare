@@ -53,7 +53,7 @@ return [
         'namespace' => 'App',
         'encoding' => env('APP_ENCODING', 'UTF-8'),
         'defaultLocale' => env('APP_DEFAULT_LOCALE', 'en_US'),
-        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'UTC'),
+        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'Australia/Sydney'),
         'base' => false,
         'dir' => 'src',
         'webroot' => 'webroot',
@@ -461,10 +461,4 @@ return [
         'errorLevel' => null,
         'fixtureStrategy' => null,
     ],
-
-    //    Yijiang's cloudflare turnstile siteKey and secretKey. shared among all apps. for convenience this time.
-    'Turnstile' => [
-        'siteKey' => '0x4AAAAAACttq_ebhR-MSuoO',
-        'secretKey' => '0x4AAAAAACttq11bgl0OXrW3WF-5K9Viu-k',
-    ]
 ];

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @var \App\View\AppView $this
  */
@@ -16,15 +17,10 @@ $this->assign('title', 'Administrator Sign In | RespiraCare');
             <div class="col-lg-5 pe-lg-5 pt-5" data-aos="fade-right">
 
                 <h2 class="fw-bold mb-4 login-title">
-                    RespiraCare Administrator <br>Sign In
+                    RespiraCare <br>Sign In
                 </h2>
 
-                <div class="alert alert-info small py-3 mb-4 shadow-sm border-0 rounded-3"
-                     style="background-color: #E0E8F5; color: #305BAB;">
-                    <strong><i class="bi bi-info-circle me-1"></i> Testing Credentials:</strong><br>
-                    Email: admin@respiracare.com<br>
-                    Password: 123
-                </div>
+                <!-- TEMP -->
 
                 <?= $this->Flash->render() ?>
 
@@ -32,8 +28,8 @@ $this->assign('title', 'Administrator Sign In | RespiraCare');
 
                 <div class="mb-4">
                     <?= $this->Form->control('email', [
-                        'class' => 'form-control form-control-lg shadow-sm',
-                        'label' => ['text' => 'Administrator ID (Email)', 'class' => 'fw-bold small mb-2'],
+                        'class' => 'form-control form-control-lg shadow-sm fs-6',
+                        'label' => ['text' => 'Email', 'class' => 'fw-bold small mb-2'],
                         'required' => true,
                         'autofocus' => true,
                     ]) ?>
@@ -41,7 +37,7 @@ $this->assign('title', 'Administrator Sign In | RespiraCare');
 
                 <div class="mb-4">
                     <?= $this->Form->control('password', [
-                        'class' => 'form-control form-control-lg shadow-sm',
+                        'class' => 'form-control form-control-lg shadow-sm fs-6',
                         'label' => ['text' => 'Password', 'class' => 'fw-bold small mb-2'],
                         'required' => true,
                     ]) ?>
@@ -49,14 +45,14 @@ $this->assign('title', 'Administrator Sign In | RespiraCare');
 
                 <div class="mb-4">
                     <div class="cf-turnstile"
-                         data-sitekey="<?= h(Configure::read('Turnstile.siteKey')) ?>"
-                         data-theme="light"
-                         data-size="normal"></div>
+                        data-sitekey="<?= h(Configure::read('Turnstile.siteKey')) ?>"
+                        data-theme="light"
+                        data-size="normal"></div>
                 </div>
 
                 <div class="d-flex align-items-center justify-content-between mt-2">
                     <?= $this->Form->button(__('Sign In'), [
-                        'class' => 'btn text-white fw-bold px-5 py-2 rounded-3 shadow-sm',
+                        'class' => 'temp-disable-button btn text-white fw-bold px-5 py-2 rounded-3 shadow-sm',
                         'style' => 'background-color: #305BAB; border: none; font-size: 1.1rem;',
                     ]) ?>
 
@@ -71,7 +67,7 @@ $this->assign('title', 'Administrator Sign In | RespiraCare');
             </div>
 
             <div class="col-lg-7 d-none d-lg-flex align-items-center text-center rounded-circle bg-white p-4 pt-5"
-                 data-aos="fade-left">
+                data-aos="fade-left">
                 <?= $this->Html->image('admin-login-vector.png', [
                     'class' => 'img-fluid',
                     'alt' => 'RespiraCare Administrator Dashboard',
